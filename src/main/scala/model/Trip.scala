@@ -1,12 +1,12 @@
 package model
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Future
 
-case class Trip(tripNo: Int, idComp: Int, plane: String, townFrom: String, townTo: String, timeOut: LocalDate, timeIn: LocalDate)
+case class Trip(tripNo: Int, idComp: Int, plane: String, townFrom: String, townTo: String, timeOut: LocalDateTime, timeIn: LocalDateTime)
 
 class TripTable(tag: Tag) extends Table[Trip](tag, "trips") {
   val tripNo = column[Int]("trip_no", O.PrimaryKey)
@@ -14,8 +14,8 @@ class TripTable(tag: Tag) extends Table[Trip](tag, "trips") {
   val plane = column[String]("plane")
   val townFrom = column[String]("town_from")
   val townTo = column[String]("town_to")
-  val timeOut = column[LocalDate]("time_out")
-  val timeIn = column[LocalDate]("time_in")
+  val timeOut = column[LocalDateTime]("time_out")
+  val timeIn = column[LocalDateTime]("time_in")
 
   def * = (tripNo, idComp, plane, townFrom, townTo, timeOut, timeIn) <> (Trip.apply _ tupled, Trip.unapply)
 }
