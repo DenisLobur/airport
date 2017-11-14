@@ -133,9 +133,13 @@ object AirportApp extends App {
     PassInTrip(7772, LocalDateTime.parse("2005-11-29T00:00:00.000"), 14, "1c")
   )
 
-
   exec(CompanyTable.table ++= companiesData)
   exec(PassengerTable.table ++= passengerData)
   exec(TripTable.table ++= tripData)
   exec(PassInTripTable.table ++= passInTripData)
+
+  // Exercises
+  //Task 63(2) Find the names of different passengers that ever travelled more than once occupying seats with the same number
+  // select ID_psg, place from Pass_in_trip group by ID_psg, place HAVING COUNT(*) >= 2
+
 }
