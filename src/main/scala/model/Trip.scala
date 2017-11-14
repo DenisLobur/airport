@@ -17,6 +17,8 @@ class TripTable(tag: Tag) extends Table[Trip](tag, "trips") {
   val timeOut = column[LocalDateTime]("time_out")
   val timeIn = column[LocalDateTime]("time_in")
 
+  val companyFk = foreignKey("company_id_fk", idComp, TableQuery[CompanyTable])(_.idComp)
+
   def * = (tripNo, idComp, plane, townFrom, townTo, timeOut, timeIn) <> (Trip.apply _ tupled, Trip.unapply)
 }
 
