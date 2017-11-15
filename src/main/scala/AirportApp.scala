@@ -174,8 +174,30 @@ object AirportApp extends App {
     exec(passNames.result).foreach(println)
   }
 
+  /** Task #77
+    * Find the days with the maximum number of flights departed from Rostov. Result set: number of trips, date. */
+  def _77(): Unit = {
+    val x = (for {
+      pit <- PassInTripTable.table
+      t <- TripTable.table if pit.tripNo === t.tripNo
+    } yield (pit, t))
+      .filter {
+        case (pit, t) => (t.townFrom === "Rostov")
+      }
+      .groupBy {
+        case (pit, t) => (pit.date, pit.tripNo)
+      }
+      .map { case ((date, tripNo), group) => (group.countDistinct, date) }
+
+    val query = x.sortBy(_._2.asc)
+
+    println("\n=> " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
+  }
+
   _63()
   _67()
   _68()
   _72()
+  _77()
 }
