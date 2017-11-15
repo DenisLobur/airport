@@ -22,10 +22,10 @@ object AirportApp extends App {
   val tripRepository = new TripRepository(db)
   val passInTripRepository = new PassInTripRepository(db)
 
-  exec(CompanyTable.table.schema.drop.asTry andThen CompanyTable.table.schema.create)
-  exec(TripTable.table.schema.drop.asTry andThen TripTable.table.schema.create)
-  exec(PassengerTable.table.schema.drop.asTry andThen PassengerTable.table.schema.create)
-  exec(PassInTripTable.table.schema.drop.asTry andThen PassInTripTable.table.schema.create)
+  //  exec(CompanyTable.table.schema.drop.asTry andThen CompanyTable.table.schema.create)
+  //  exec(TripTable.table.schema.drop.asTry andThen TripTable.table.schema.create)
+  //  exec(PassengerTable.table.schema.drop.asTry andThen PassengerTable.table.schema.create)
+  //  exec(PassInTripTable.table.schema.drop.asTry andThen PassInTripTable.table.schema.create)
 
   println(CompanyTable.table.schema.createStatements.mkString + "\n"
     + PassengerTable.table.schema.createStatements.mkString + "\n"
@@ -34,17 +34,103 @@ object AirportApp extends App {
   )
 
 
-  exec(CompanyTable.table ++= companiesData)
-  exec(TripTable.table ++= tripData)
-  exec(PassengerTable.table ++= passengerData)
-  exec(PassInTripTable.table ++= passInTripData)
+  //  exec(CompanyTable.table ++= companiesData)
+  //  exec(TripTable.table ++= tripData)
+  //  exec(PassengerTable.table ++= passengerData)
+  //  exec(PassInTripTable.table ++= passInTripData)
 
   // Exercises
-  //Task 63(2) Find the names of different passengers that ever travelled more than once occupying seats with the same number
-  // select ID_psg, place from Pass_in_trip group by ID_psg, place HAVING COUNT(*) >= 2
-//  val _63 = passInTrip.get()
-//  val z = Await.result(_63, Duration.Inf)
-//  z.foreach(println)
-//  passInTrip.select63()
 
+  /** Task 63
+    * Find the names of different passengers that ever travelled more than once occupying seats with the same number
+    */
+  def _63(): Unit = {
+    val query = passInTripRepository.table.join(passengerRepository.table).on(_.idPsg === _.idPsg)
+      .groupBy {
+        case (pasintrip, pas) => (pasintrip.place, pasintrip.idPsg, pas.name)
+      }
+      .map {
+        case ((place, idPas, name), group) => (group.size, name)
+      }
+      .filter(p => p._1 > 1)
+      .map(_._2)
+      .result
+
+    println("\n=> " + query.statements.mkString.toUpperCase)
+    exec(query).foreach(println)
+  }
+
+  /** Task 67
+    * Find out the number of routes with the greatest number of flights (trips).
+    * Notes.
+    * 1) A - B and B - A are to be considered DIFFERENT routes.
+    * 2) Use the Trip table only. */
+  def _67(): Unit = {
+    val max = tripRepository.table
+      .groupBy {
+        case t => (t.townFrom, t.townTo)
+      }
+      .map {
+        case ((townFrom, townTo), group) => group.size
+      }
+      .groupBy {
+        _ => true
+      }
+      .map {
+        case (_, group) => group.max
+      }
+
+    val query = tripRepository.table
+      .groupBy {
+        case t => (t.townFrom, t.townTo)
+      }
+      .map {
+        case ((townFrom, townTo), group) => (townFrom, townTo, group.size)
+      }
+      .filter {
+        case (townFrom, townTo, size) => size in max
+      }
+      .length
+      .result
+
+    println("\n=> " + query.statements.mkString.toUpperCase)
+    println(exec(query))
+  }
+
+  /** Task 68
+    * Find out the number of routes with the greatest number of flights (trips).
+    * Notes.
+    * 1) A - B and B - A are to be considered the SAME route.
+    * 2) Use the Trip table only. */
+  def _68(): Unit = {
+    val subQuery = (tripRepository.table.map(t => (t.idComp, t.townFrom, t.townTo)) unionAll
+      tripRepository.table.map(t => (t.idComp, t.townTo, t.townFrom)))
+      .groupBy {
+        case t => (t._2, t._3)
+      }
+      .map {
+        case (_, group) => group.size
+      }
+
+    val max = subQuery
+      .groupBy {
+        _ => true
+      }
+      .map {
+        case (_, group) => group.max
+      }
+
+    val query = subQuery.filter {
+      _ in max
+    }
+    .length
+    .result
+
+    println("\n=> " + query.statements.mkString.toUpperCase)
+    println(exec(query) / 2)
+  }
+
+  _63()
+  _67()
+  _68()
 }
