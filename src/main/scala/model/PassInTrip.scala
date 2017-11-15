@@ -27,21 +27,21 @@ object PassInTripTable {
 }
 
 class PassInTripRepository(db: Database) {
-  val passInTripTableQuery = TableQuery[PassInTripTable]
+  val table = TableQuery[PassInTripTable]
 
   def create(passInTrip: PassInTrip): Future[PassInTrip] = {
-    db.run(passInTripTableQuery returning passInTripTableQuery += passInTrip)
+    db.run(table returning table += passInTrip)
   }
 
   def update(passInTrip: PassInTrip): Future[Int] = {
-    db.run(passInTripTableQuery.filter(_.tripNo === passInTrip.tripNo).update(passInTrip))
+    db.run(table.filter(_.tripNo === passInTrip.tripNo).update(passInTrip))
   }
 
   def delete(passInTrip: PassInTrip): Future[Int] = {
-    db.run(passInTripTableQuery.filter(_.tripNo === passInTrip.tripNo).delete)
+    db.run(table.filter(_.tripNo === passInTrip.tripNo).delete)
   }
 
   def getById(passInTripId: Int): Future[PassInTrip] = {
-    db.run(passInTripTableQuery.filter(_.tripNo === passInTripId).result.head)
+    db.run(table.filter(_.tripNo === passInTripId).result.head)
   }
 }

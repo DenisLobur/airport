@@ -27,21 +27,21 @@ object TripTable {
 }
 
 class TripRepository(db: Database) {
-  val tripTableQuery = TableQuery[TripTable]
+  val table = TableQuery[TripTable]
 
   def create(trip: Trip): Future[Trip] = {
-    db.run(tripTableQuery returning tripTableQuery += trip)
+    db.run(table returning table += trip)
   }
 
   def update(trip: Trip): Future[Int] = {
-    db.run(tripTableQuery.filter(_.tripNo === trip.tripNo).update(trip))
+    db.run(table.filter(_.tripNo === trip.tripNo).update(trip))
   }
 
   def delete(trip: Trip): Future[Int] = {
-    db.run(tripTableQuery.filter(_.tripNo === trip.tripNo).delete)
+    db.run(table.filter(_.tripNo === trip.tripNo).delete)
   }
 
   def getById(tripId: Int): Future[Trip] = {
-    db.run(tripTableQuery.filter(_.tripNo === tripId).result.head)
+    db.run(table.filter(_.tripNo === tripId).result.head)
   }
 }

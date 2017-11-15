@@ -18,21 +18,21 @@ object PassengerTable {
 }
 
 class PassengerRepository(db: Database) {
-  val passengerTableQuery = TableQuery[PassengerTable]
+  val table = TableQuery[PassengerTable]
 
   def create(passenger: Passenger): Future[Passenger] = {
-    db.run(passengerTableQuery returning passengerTableQuery += passenger)
+    db.run(table returning table += passenger)
   }
 
   def update(passenger: Passenger): Future[Int] = {
-    db.run(passengerTableQuery.filter(_.idPsg === passenger.idPsg).update(passenger))
+    db.run(table.filter(_.idPsg === passenger.idPsg).update(passenger))
   }
 
   def delete(passenger: Passenger): Future[Int] = {
-    db.run(passengerTableQuery.filter(_.idPsg === passenger.idPsg).delete)
+    db.run(table.filter(_.idPsg === passenger.idPsg).delete)
   }
 
   def getById(passengerId: Int): Future[Passenger] = {
-    db.run(passengerTableQuery.filter(_.idPsg === passengerId).result.head)
+    db.run(table.filter(_.idPsg === passengerId).result.head)
   }
 }
