@@ -1,11 +1,8 @@
 import java.text.SimpleDateFormat
-
 import slick.jdbc.PostgresProfile.api._
-
 import scala.concurrent.Await
 import model._
 import data._
-
 import scala.concurrent.duration.Duration
 
 
@@ -41,8 +38,7 @@ object AirportApp extends App {
   // Exercises
 
   /** Task #63
-    * Find the names of different passengers that ever travelled more than once occupying seats with the same number
-    */
+    * Find the names of different passengers that ever travelled more than once occupying seats with the same number */
   def _63(): Unit = {
     val query = passInTripRepository.table
       .join(passengerRepository.table)
@@ -197,6 +193,61 @@ object AirportApp extends App {
     exec(query.result).foreach(println)
   }
 
+  /** Task #87
+    * Considering that a passenger lives in his first flight departure town, find those passengers among dwellers of other cities who visited Moscow more than once.
+    * Result set: passenger's name, number of visits to Moscow. */
+  def _87(): Unit = {
+    val subQuery = passInTripRepository.table
+      .join(tripRepository.table)
+      .on(_.tripNo === _.tripNo)
+      .join(passengerRepository.table)
+      .on { case
+        ((pasInTrip, trip), pas) => pasInTrip.idPsg === pas.idPsg
+      }
+      .map {
+        case ((pasInTrip, trip), pas) => (pas.idPsg, pas.name, pasInTrip.date, trip.townFrom, trip.townTo)
+      }
+
+    val idPsgMsc = subQuery
+      .groupBy {
+        case (pId, name, date, tf, tt) => pId
+      }
+      .map {
+        case (pId, group) => (pId, group.map(_._3).min)
+      }
+      .join(subQuery)
+      .on(_._2 === _._3
+      )
+      .map {
+        case (firstTrip, trips) => (trips._1, trips._4)
+      }
+      .distinct
+      .filter {
+        case (id, city) => city =!= "Moscow"
+      }
+      .map(_._1)
+
+    val query = subQuery.
+      filter {
+        case (pId, name, date, townFrom, townTo) => townTo === "Moscow" && pId.in(idPsgMsc)
+      }
+      .map {
+        case (pId, name, date, townFrom, townTo) => (name, townTo)
+      }
+      .groupBy {
+        case (name, townTo) => name
+      }
+      .map {
+        case (name, group) => (name, group.size)
+      }
+      .filter {
+        case (name, num) => num > 1
+      }
+
+    println("\n#87 => " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
+  }
+
   /** Task #88
     * Among the clients which only use a single company, find the different passengers who have flown more often than others.
     * Result set: passenger name, number of trips, and company name. */
@@ -239,7 +290,7 @@ object AirportApp extends App {
     exec(query.result).foreach(println)
   }
 
-  /** Task #95(2)
+  /** Task #95
     * Using the Pass_in_Trip table, calculate for each airline company:
     * 1) the number of performed flights;
     * 2) the number of the used types of planes;
@@ -277,6 +328,8 @@ object AirportApp extends App {
     exec(query.result).foreach(println)
   }
 
+  /** Task #102
+    * Find the names of the different passengers, which flew only by the same route (there and back or in the one direction). */
   def _102(): Unit = {
     val trips = tripRepository.table
       .map {
@@ -311,6 +364,10 @@ object AirportApp extends App {
     exec(query.result).foreach(println)
   }
 
+  /** Task #103
+    * Find out the three smallest and three greatest trip numbers.
+    * Output them in one row of six columns ordered from the least trip number to the greatest one.
+    * Note. Consider that the Trip table contains 6 or more rows. */
   def _103(): Unit = {
     val tripMax = tripRepository.table
       .sortBy(_.tripNo.desc)
@@ -330,6 +387,9 @@ object AirportApp extends App {
     exec(query.result).foreach(println)
   }
 
+  /** Task #107
+    * Find the company, trip number, and trip date for the fifth passenger (in time order), who had flown from the Rostov city in the April 2003.
+    * Note. Take into account for this task that two flights cannot simultaneously fly off from Rostov . */
   def _107(): Unit = {
     val format1 = new SimpleDateFormat("yyyyMMdd HH:mm:ss").parse("20030401 00:00:00")
     val date1 = new java.sql.Date(format1.getTime)
@@ -365,14 +425,49 @@ object AirportApp extends App {
     exec(query.result).foreach(println)
   }
 
+  /** Task #114
+    * Find the names of the different passengers, which flew more often than others in the same seat.
+    * Output: name and quantity of the flights in the same seat. */
+  def _114(): Unit = {
+    val subQuery = passInTripRepository.table
+      .join(passengerRepository.table)
+      .on(_.idPsg === _.idPsg)
+      .map {
+        case (pasInTrip, pas) => (pas.name, pasInTrip.place)
+      }
+      .groupBy {
+        case (name, place) => (name, place)
+      }
+      .map {
+        case ((name, place), group) => (name, group.size)
+      }
+
+    val maximum = subQuery
+      .map(_._2)
+      .groupBy { _ => true }
+      .map {
+        case (_, group) => group.max
+      }
+
+    val query = subQuery.
+      filter {
+        case (name, times) => times in maximum
+      }
+
+    println("\n#114 => " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
+  }
+
   _63()
   _67()
   _68()
   _72()
   _77()
+  _87()
   _88()
   _95()
   _102()
   _103()
   _107()
+  _114()
 }
