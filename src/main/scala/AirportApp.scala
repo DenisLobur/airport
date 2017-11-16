@@ -21,10 +21,10 @@ object AirportApp extends App {
   val tripRepository = new TripRepository(db)
   val passInTripRepository = new PassInTripRepository(db)
 
-  //    exec(CompanyTable.table.schema.drop.asTry andThen CompanyTable.table.schema.create)
-  //    exec(TripTable.table.schema.drop.asTry andThen TripTable.table.schema.create)
-  //    exec(PassengerTable.table.schema.drop.asTry andThen PassengerTable.table.schema.create)
-  //    exec(PassInTripTable.table.schema.drop.asTry andThen PassInTripTable.table.schema.create)
+  exec(CompanyTable.table.schema.drop.asTry andThen CompanyTable.table.schema.create)
+  exec(TripTable.table.schema.drop.asTry andThen TripTable.table.schema.create)
+  exec(PassengerTable.table.schema.drop.asTry andThen PassengerTable.table.schema.create)
+  exec(PassInTripTable.table.schema.drop.asTry andThen PassInTripTable.table.schema.create)
 
   println(CompanyTable.table.schema.createStatements.mkString + "\n"
     + PassengerTable.table.schema.createStatements.mkString + "\n"
@@ -33,10 +33,10 @@ object AirportApp extends App {
   )
 
 
-  //    exec(CompanyTable.table ++= companiesData)
-  //    exec(TripTable.table ++= tripData)
-  //    exec(PassengerTable.table ++= passengerData)
-  //    exec(PassInTripTable.table ++= passInTripData)
+  exec(CompanyTable.table ++= companiesData)
+  exec(TripTable.table ++= tripData)
+  exec(PassengerTable.table ++= passengerData)
+  exec(PassInTripTable.table ++= passInTripData)
 
   // Exercises
 
