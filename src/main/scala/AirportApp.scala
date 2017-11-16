@@ -55,7 +55,7 @@ object AirportApp extends App {
       .map(_._2)
       .result
 
-    println("\n=> " + query.statements.mkString.toUpperCase)
+    println("\n#63 => " + query.statements.mkString.toUpperCase)
     exec(query).foreach(println)
   }
 
@@ -92,7 +92,7 @@ object AirportApp extends App {
       .length
       .result
 
-    println("\n=> " + query.statements.mkString.toUpperCase)
+    println("\n#67 => " + query.statements.mkString.toUpperCase)
     println(exec(query))
   }
 
@@ -126,7 +126,7 @@ object AirportApp extends App {
       .length
       .result
 
-    println("\n=> " + query.statements.mkString.toUpperCase)
+    println("\n#68 => " + query.statements.mkString.toUpperCase)
     println(exec(query) / 2)
   }
 
@@ -170,7 +170,7 @@ object AirportApp extends App {
         case (idPasMax, pas) => (pas.name, idPasMax._2)
       }
 
-    println("\n=> " + passNames.result.statements.mkString.toUpperCase)
+    println("\n#72 => " + passNames.result.statements.mkString.toUpperCase)
     exec(passNames.result).foreach(println)
   }
 
@@ -191,7 +191,7 @@ object AirportApp extends App {
 
     val query = rostovTrips.sortBy(_._2.asc)
 
-    println("\n=> " + query.result.statements.mkString.toUpperCase)
+    println("\n#77 => " + query.result.statements.mkString.toUpperCase)
     exec(query.result).foreach(println)
   }
 
@@ -233,7 +233,45 @@ object AirportApp extends App {
         case (pas, tripNo, comp) => tripNo === maximumTime
       }
 
-    println("\n=> " + query.result.statements.mkString.toUpperCase)
+    println("\n#88 => " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
+  }
+
+  /** Task #95(2)
+    * Using the Pass_in_Trip table, calculate for each airline company:
+    * 1) the number of performed flights;
+    * 2) the number of the used types of planes;
+    * 3) the number of different passengers that have been transported;
+    * 4) the total number of passengers that have been transported by the company.
+    * Output: airline name, 1), 2), 3), 4). */
+  def _95(): Unit = {
+    val subQuery = passInTripRepository.table
+      .join(tripRepository.table)
+      .on(_.tripNo === _.tripNo)
+      .map {
+        case (pasInTrip, trip) => (trip.idComp, pasInTrip.tripNo, trip.plane, pasInTrip.idPsg)
+      }
+
+    val queryIdComp = subQuery
+      .groupBy {
+        case (company, trip, plane, pas) => company
+      }
+      .map {
+        case (company, group) => (
+          company, group.map(_._2).size,
+          group.map(_._3).countDistinct,
+          group.map(_._4).countDistinct,
+          group.map(_._3).size
+        )
+      }
+    val query = queryIdComp
+      .join(companyRepository.table)
+      .on(_._1 === _.idComp)
+      .map {
+        case (req, c) => (c.name, req._2, req._3, req._4, req._5)
+      }
+
+    println("\n#95 => " + query.result.statements.mkString.toUpperCase)
     exec(query.result).foreach(println)
   }
 
@@ -243,4 +281,5 @@ object AirportApp extends App {
   _72()
   _77()
   _88()
+  _95()
 }
