@@ -19,10 +19,10 @@ object AirportApp extends App {
   val tripRepository = new TripRepository(db)
   val passInTripRepository = new PassInTripRepository(db)
 
-  //  exec(CompanyTable.table.schema.drop.asTry andThen CompanyTable.table.schema.create)
-  //  exec(TripTable.table.schema.drop.asTry andThen TripTable.table.schema.create)
-  //  exec(PassengerTable.table.schema.drop.asTry andThen PassengerTable.table.schema.create)
-  //  exec(PassInTripTable.table.schema.drop.asTry andThen PassInTripTable.table.schema.create)
+  //    exec(CompanyTable.table.schema.drop.asTry andThen CompanyTable.table.schema.create)
+  //    exec(TripTable.table.schema.drop.asTry andThen TripTable.table.schema.create)
+  //    exec(PassengerTable.table.schema.drop.asTry andThen PassengerTable.table.schema.create)
+  //    exec(PassInTripTable.table.schema.drop.asTry andThen PassInTripTable.table.schema.create)
 
   println(CompanyTable.table.schema.createStatements.mkString + "\n"
     + PassengerTable.table.schema.createStatements.mkString + "\n"
@@ -31,14 +31,14 @@ object AirportApp extends App {
   )
 
 
-  //  exec(CompanyTable.table ++= companiesData)
-  //  exec(TripTable.table ++= tripData)
-  //  exec(PassengerTable.table ++= passengerData)
-  //  exec(PassInTripTable.table ++= passInTripData)
+  //    exec(CompanyTable.table ++= companiesData)
+  //    exec(TripTable.table ++= tripData)
+  //    exec(PassengerTable.table ++= passengerData)
+  //    exec(PassInTripTable.table ++= passInTripData)
 
   // Exercises
 
-  /** Task 63
+  /** Task #63
     * Find the names of different passengers that ever travelled more than once occupying seats with the same number
     */
   def _63(): Unit = {
@@ -59,7 +59,7 @@ object AirportApp extends App {
     exec(query).foreach(println)
   }
 
-  /** Task 67
+  /** Task #67
     * Find out the number of routes with the greatest number of flights (trips).
     * Notes.
     * 1) A - B and B - A are to be considered DIFFERENT routes.
@@ -96,7 +96,7 @@ object AirportApp extends App {
     println(exec(query))
   }
 
-  /** Task 68
+  /** Task #68
     * Find out the number of routes with the greatest number of flights (trips).
     * Notes.
     * 1) A - B and B - A are to be considered the SAME route.
@@ -195,9 +195,52 @@ object AirportApp extends App {
     exec(query.result).foreach(println)
   }
 
+  /** Task #88
+    * Among the clients which only use a single company, find the different passengers who have flown more often than others.
+    * Result set: passenger name, number of trips, and company name. */
+  def _88(): Unit = {
+    val passanger = passInTripRepository.table
+      .join(passengerRepository.table)
+      .on(_.idPsg === _.idPsg)
+      .join(tripRepository.table)
+      .on {
+        case ((pasInTrip, pas), t) => pasInTrip.tripNo === t.tripNo
+      }
+      .map {
+        case ((pasInTrip, pas), t) => (pasInTrip.idPsg, t.idComp, pasInTrip.tripNo, pas.name)
+      }
+      .groupBy {
+        case (pas, comp, trip, name) => pas
+      }
+      .map {
+        case (pas, group) => (
+          pas, group.map(_._2).countDistinct, group.map(_._3).size, group.map(_._2).max, group.map(_._4).max)
+      }
+      .filter {
+        case (pas, compNo, tripNo, comp, name) => compNo === 1
+      }
+      .map(t => (t._1, t._3, t._4, t._5))
+
+    val maximumTime = passanger.map(_._2).max
+
+    val query = passanger
+      .join(companyRepository.table)
+      .on(_._3 === _.idComp)
+      .map {
+        case (pas, comp) => (pas._4.getOrElse("no name"), pas._2, comp.name)
+      }
+      .filter {
+        case (pas, tripNo, comp) => tripNo === maximumTime
+      }
+
+    println("\n=> " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
+  }
+
   _63()
   _67()
   _68()
   _72()
   _77()
+  _88()
 }
