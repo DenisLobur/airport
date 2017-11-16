@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Await
@@ -163,15 +165,15 @@ object AirportApp extends App {
         case pas => (pas._1, pas._3)
       }
 
-    val passNames = idPasWithMax
+    val query = idPasWithMax
       .join(passengerRepository.table)
       .on(_._1 === _.idPsg)
       .map {
         case (idPasMax, pas) => (pas.name, idPasMax._2)
       }
 
-    println("\n#72 => " + passNames.result.statements.mkString.toUpperCase)
-    exec(passNames.result).foreach(println)
+    println("\n#72 => " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
   }
 
   /** Task #77
@@ -275,6 +277,94 @@ object AirportApp extends App {
     exec(query.result).foreach(println)
   }
 
+  def _102(): Unit = {
+    val trips = tripRepository.table
+      .map {
+        f =>
+          (f.tripNo, Case If (f.townTo < f.townFrom) Then f.townTo Else f.townFrom,
+            Case If (f.townTo < f.townFrom) Then f.townFrom Else f.townTo)
+      }
+
+    val query = trips
+      .join(passInTripRepository.table)
+      .on(_._1 === _.tripNo)
+      .map {
+        case (tr, pit) => (tr._2, tr._3, pit.idPsg)
+      }
+      .join(passengerRepository.table)
+      .on(_._3 === _.idPsg)
+      .map {
+        case (tr, p) => (p.name, tr._1, tr._2)
+      }
+      .groupBy {
+        case (passname, town1, town2) => passname
+      }
+      .map {
+        case (passname, group) => (passname, group.map(_._2).countDistinct, group.map(_._3).countDistinct)
+      }
+      .filter {
+        s => (s._2 === 1) && (s._3 === 1)
+      }
+      .map(_._1)
+
+    println("\n#102 => " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
+  }
+
+  def _103(): Unit = {
+    val tripMax = tripRepository.table
+      .sortBy(_.tripNo.desc)
+      .take(3)
+      .map(_.tripNo)
+    val tripMin = tripRepository.table
+      .sortBy(_.tripNo.asc)
+      .take(3)
+      .map(_.tripNo)
+    val query = tripMin.take(1).join(tripMin.drop(1).take(1)).
+      join(tripMin.drop(2).take(1)).map { case (s1, s2) => (s1._1, s1._2, s2) }.
+      join(tripMax.drop(2).take(1)).map { case (s1, s2) => (s1._1, s1._2, s1._3, s2) }.
+      join(tripMax.drop(1).take(1)).map { case (s1, s2) => (s1._1, s1._2, s1._3, s1._4, s2) }.
+      join(tripMax.take(1)).map { case (s1, s2) => (s1._1, s1._2, s1._3, s1._4, s1._5, s2) }
+
+    println("\n#103 => " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
+  }
+
+  def _107(): Unit = {
+    val format1 = new SimpleDateFormat("yyyyMMdd HH:mm:ss").parse("20030401 00:00:00")
+    val date1 = new java.sql.Date(format1.getTime)
+    val format2 = new SimpleDateFormat("yyyyMMdd HH:mm:ss").parse("20030501 00:00:00")
+    val date2 = new java.sql.Date(format2.getTime)
+
+    val query = passInTripRepository.table
+      .join(tripRepository.table)
+      .on(_.tripNo === _.tripNo)
+      .join(companyRepository.table)
+      .on {
+        case ((pit, t), c) => t.idComp === c.idComp
+      }
+      .map {
+        case ((pit, t), c) => (t.townFrom, c.name, pit.tripNo, pit.date, pit.idPsg)
+      }
+      .filter {
+        s => s._1 === "Rostov"
+      }
+      .filter {
+        s => s._4.asColumnOf[java.sql.Date] > date1 && s._4.asColumnOf[java.sql.Date] < date2
+      }
+      .sortBy {
+        s => s._4.desc
+      }
+      .drop(4)
+      .take(1)
+      .map {
+        s => (s._2, s._3, s._4)
+      }
+
+    println("\n#107 => " + query.result.statements.mkString.toUpperCase)
+    exec(query.result).foreach(println)
+  }
+
   _63()
   _67()
   _68()
@@ -282,4 +372,7 @@ object AirportApp extends App {
   _77()
   _88()
   _95()
+  _102()
+  _103()
+  _107()
 }
